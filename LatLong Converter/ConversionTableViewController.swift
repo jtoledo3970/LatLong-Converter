@@ -8,8 +8,14 @@
 
 import UIKit
 
-class ConversionTableViewController: UITableViewController {
+class ConversionTableViewController: UIViewController {
     // Outlets
+    
+    @IBOutlet weak var ddCard: UIView!
+    @IBOutlet weak var dmsCard: UIView!
+    @IBOutlet weak var ddmCard: UIView!
+    @IBOutlet weak var resetButton: UIButton!
+    
     @IBOutlet weak var decimalDegreeLabel: UITextField!
     @IBOutlet weak var dTextField: UITextField!
     @IBOutlet weak var mTextField: UITextField!
@@ -25,15 +31,16 @@ class ConversionTableViewController: UITableViewController {
     
     @IBAction func ddEdit(_ sender: Any) {
         let ddTemp = decimalDegreeLabel.text!
-        let dd : Double = Double(ddTemp)!
-        let ddObject = DD(dd: dd)
-        let dmsOutput = ddObject.convertToDMS()
-        let ddmOutput = ddObject.convertToDDM()
-        dTextField.text = dmsOutput.d
-        mTextField.text = dmsOutput.m
-        sTextField.text = dmsOutput.s
-        degreesTextField.text = ddmOutput.d
-        minutesTextField.text = ddmOutput.m
+        if let dd : Double =  Double(ddTemp) {
+            let ddObject = DD(dd: dd)
+            let dmsOutput = ddObject.convertToDMS()
+            let ddmOutput = ddObject.convertToDDM()
+            dTextField.text = dmsOutput.d
+            mTextField.text = dmsOutput.m
+            sTextField.text = dmsOutput.s
+            degreesTextField.text = ddmOutput.d
+            minutesTextField.text = ddmOutput.m
+        } else { clear() }
     }
     @IBAction func dEdit(_ sender: Any) {
         if ((dTextField.text ?? "").isEmpty) {
@@ -142,7 +149,6 @@ class ConversionTableViewController: UITableViewController {
         sTextField.text = dmsOutput.s
         decimalDegreeLabel.text = ddmOutput
     }
-
     @objc func dismissKeyboard(_ sender: UITapGestureRecognizer) {
         decimalDegreeLabel.resignFirstResponder()
         dTextField.resignFirstResponder()
@@ -151,11 +157,62 @@ class ConversionTableViewController: UITableViewController {
         degreesTextField.resignFirstResponder()
         minutesTextField.resignFirstResponder()
     }
+    @IBAction func resetButtonTapped(_ sender: Any) {
+        clear()
+    }
+    
+    func clear() {
+        decimalDegreeLabel.text = nil
+        dTextField.text = nil
+        mTextField.text = nil
+        sTextField.text = nil
+        degreesTextField.text = nil
+        minutesTextField.text = nil
+        self.view.frame.origin.y = 0
+    }
+    
+    func setupViews() {
+        ddCard.layer.cornerRadius = 8
+        ddCard.layer.masksToBounds = true
+        dmsCard.layer.cornerRadius = 8
+        dmsCard.layer.masksToBounds = true
+        dmsCard.layer.borderWidth = 1
+        dmsCard.layer.borderColor = UIColor.tcSeafoamGreen.cgColor
+        ddmCard.layer.cornerRadius = 8
+        ddmCard.layer.masksToBounds = true
+        resetButton.layer.cornerRadius = 8
+        resetButton.layer.masksToBounds = true
+        resetButton.layer.borderWidth = 1
+        resetButton.layer.borderColor = UIColor.tcSeafoamGreen.cgColor
+
+    }
+    
+    @objc func keyboardWillShow(notification: NSNotification) {
+        if let keyboardSize = (notification.userInfo?[UIKeyboardFrameBeginUserInfoKey] as? NSValue)?.cgRectValue {
+            if self.view.frame.origin.y == 0{
+                self.view.frame.origin.y -= keyboardSize.height
+            }
+        }
+    }
+    
+    @objc func keyboardWillHide(notification: NSNotification) {
+        if let keyboardSize = (notification.userInfo?[UIKeyboardFrameBeginUserInfoKey] as? NSValue)?.cgRectValue {
+            if self.view.frame.origin.y != 0{
+                self.view.frame.origin.y += keyboardSize.height
+            }
+        }
+        self.view.frame.origin.y = 0
+    }
     
     override func viewDidLoad() {
         super.viewDidLoad()
         
+        setupViews()
+        
         title = "Coordinate Conversion"
+        
+        NotificationCenter.default.addObserver(self, selector: #selector(self.keyboardWillShow), name: NSNotification.Name.UIKeyboardWillShow, object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(self.keyboardWillHide), name: NSNotification.Name.UIKeyboardWillHide, object: nil)
         
         let tapGesture = UITapGestureRecognizer(target: self, action: #selector(self.dismissKeyboard (_:)))
         self.view.addGestureRecognizer(tapGesture)
